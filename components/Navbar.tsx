@@ -25,21 +25,19 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useMemo } from "react";
-import { useTheme } from "next-themes";
 import { usePathname } from "next/navigation";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 
-interface NavbarProps {
-	themes?: Array<{
-		icon: React.ElementType;
-		label: string;
-		value: string;
-	}>;
-}
+import { useThemeManager } from "@/components/providers/theme-provider";
+import { useTheme } from "next-themes";
 
-const Navbar: React.FC<NavbarProps> = () => {
-	// Theme toggle
-	const themes = useMemo(
+const Navbar: React.FC = () => {
+	// Hooks for theme management
+	const { theme: currentTheme, setTheme: setCurrentTheme } = useThemeManager();
+	const { setTheme: setMode } = useTheme();
+
+	// Memoized lists for navigation and themes
+	const modes = useMemo(
 		() => [
 			{ icon: Computer, label: "system" },
 			{ icon: Sun, label: "light" },
@@ -47,7 +45,16 @@ const Navbar: React.FC<NavbarProps> = () => {
 		],
 		[]
 	);
-	const { setTheme } = useTheme();
+
+	const customThemes = useMemo(
+		() => [
+			{ label: "default", value: "default" },
+			{ label: "art-deco", value: "art-deco" },
+			{ label: "mono", value: "mono" },
+			{ label: "bubblegum", value: "bubblegum" },
+		],
+		[]
+	);
 
 	// Public routes
 	const pathname = usePathname();
@@ -70,13 +77,13 @@ const Navbar: React.FC<NavbarProps> = () => {
 				icon: LucideLayoutDashboard,
 				label: "Dashboard",
 				href: "/dashboard",
-				active: pathname === "/dashboard",
+				active: pathname.startsWith("/dashboard"),
 			},
 			{
 				icon: Search,
 				label: "Search",
 				href: "/search",
-				active: pathname === "/search",
+				active: pathname.startsWith("/search"),
 			},
 		],
 		[pathname]
@@ -137,21 +144,53 @@ const Navbar: React.FC<NavbarProps> = () => {
 								Theme
 							</NavigationMenuTrigger>
 							<NavigationMenuContent>
-								<ul className='nav-menu'>
-									{themes.map((theme) => (
-										<li key={theme.label}>
-											<NavigationMenuLink asChild>
-												<Link
-													href='#'
-													className='nav-menu-link'
-													onClick={() => setTheme(theme.label)}>
-													<theme.icon size={16} />
-													{theme.label}
-												</Link>
-											</NavigationMenuLink>
-										</li>
-									))}
-								</ul>
+								<div className='nav-menu w-40'>
+									{/* Mode Switcher */}
+									<div className='px-2 py-1.5 text-sm font-semibold'>Mode</div>
+									<ul>
+										{modes.map((mode) => (
+											<li key={mode.label}>
+												<NavigationMenuLink asChild>
+													<Link
+														href='#'
+														className='nav-menu-link'
+														onClick={() => setMode(mode.label)}>
+														<mode.icon size={16} />
+														{mode.label}
+													</Link>
+												</NavigationMenuLink>
+											</li>
+										))}
+									</ul>
+
+									{/* Separator */}
+									<div className='my-1 h-px bg-border' />
+
+									{/* Custom Theme Switcher */}
+									<div className='px-2 py-1.5 text-sm font-semibold'>Theme</div>
+									<ul>
+										{customThemes.map((theme) => (
+											<li key={theme.value}>
+												<NavigationMenuLink asChild>
+													<Link
+														href='#'
+														className={cn(
+															"nav-menu-link",
+															currentTheme === theme.value &&
+																"bg-accent text-accent-foreground"
+														)}
+														onClick={() =>
+															setCurrentTheme(
+																theme.value as "default" | "art-deco" | "mono"
+															)
+														}>
+														{theme.label}
+													</Link>
+												</NavigationMenuLink>
+											</li>
+										))}
+									</ul>
+								</div>
 							</NavigationMenuContent>
 						</NavigationMenuItem>
 						<SignedIn>
